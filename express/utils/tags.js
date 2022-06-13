@@ -1,3 +1,5 @@
+const removeMarkdown = require('remove-markdown');
+
 const stopWords = [
   '#', '##', 'a', 'about', 'above', 'after', 'again', 'against', 'all', 'am',
   'an', 'and', 'any', 'are', 'aren\'t', 'as', 'at', 'be', 'because', 'been',
@@ -30,7 +32,34 @@ const stopWords = [
  * @returns {[string]} - An array of the most frequently used non-Stopwords
  */
 function getTopWords (bodyText, tagCount = 5) {
-  // Write your own implementation
+  // Remove markdown
+  const noMd = removeMarkdown(bodyText);
+
+  // Split on word boundaries and remove punctuation etc
+  const words = noMd.split(/\b/).map(w => w.replace(/\W/gm, ''));
+
+  // Filter to remove stop words and blank strings
+  const filteredWords = words.filter(w => !stopWords.includes(w) && w.replace(/\s/, '').length !== 0);
+
+  // Count the frequency of each word
+  const frequencyMap = {};
+  filteredWords.forEach(w => {
+    if (frequencyMap[w]) {
+      frequencyMap[w] = frequencyMap[w] + 1;
+    } else {
+      frequencyMap[w] = 1;
+    }
+  });
+
+  // Sort by frequency
+  const keys = Object.keys(frequencyMap);
+  keys.sort((a, b) => {
+      return frequencyMap[a] - frequencyMap[b];
+  });
+
+  // And return the top 5. Actually I think if any of the top 5 have a count of 1, they should be excluded,
+  // because you do get quite a bit of nonsense (particularly in short articles).
+  return keys.reverse().slice(0,tagCount);
 }
 
 module.exports = { getTopWords }
